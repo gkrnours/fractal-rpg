@@ -22,6 +22,22 @@ function setup(scene) {
 	var cube = new THREE.Mesh(geometry, material)
 	scene.add(cube)
 
+	var skybox_urls = [
+		"img/sky/side.png", "img/sky/side.png",
+		"img/sky/bottom.png", "img/sky/top.png",
+		"img/sky/side.png", "img/sky/side.png",
+	]
+	var skybox_texture = new THREE.CubeTextureLoader().load(skybox_urls)
+	skybox_texture.magFilter = THREE.NearestFilter
+	var skybox_geometry = new THREE.CubeGeometry(20, 20, 20)
+	var skybox_material = new THREE.MeshBasicMaterial({
+		color: 0xffffff, envMap: skybox_texture, side: THREE.BackSide
+	})
+	var skybox = new THREE.Mesh(skybox_geometry, skybox_material)
+	skybox.position.z = 10
+	skybox.position.x = 5
+	scene.add(skybox)
+
 	var grass = new THREE.TextureLoader().load("img/grass.png")
 	grass.magFilter = THREE.NearestFilter
 	grass.wrapS = THREE.RepeatWrapping
