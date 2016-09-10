@@ -6,7 +6,7 @@ function start() {
 	camera.position.z = 10
 	camera.position.x = 5
 	camera.position.y = 2
-	camera.lookAt({x:5,y:0,z:5})
+	camera.lookAt({x:5,y:0,z:-20})
 
 	var renderer = new THREE.WebGLRenderer()
 	renderer.setSize(window.innerWidth/1, window.innerHeight/1, false)
@@ -29,13 +29,14 @@ function setup(scene) {
 	]
 	var skybox_texture = new THREE.CubeTextureLoader().load(skybox_urls)
 	skybox_texture.magFilter = THREE.NearestFilter
-	var skybox_geometry = new THREE.CubeGeometry(20, 20, 20)
+	var skybox_geometry = new THREE.CubeGeometry(100, 100, 100)
 	var skybox_material = new THREE.MeshBasicMaterial({
 		color: 0xffffff, envMap: skybox_texture, side: THREE.BackSide
 	})
 	var skybox = new THREE.Mesh(skybox_geometry, skybox_material)
 	skybox.position.z = 10
 	skybox.position.x = 5
+	skybox.position.y = 2
 	scene.add(skybox)
 
 	var grass = new THREE.TextureLoader().load("img/grass.png")
@@ -50,6 +51,18 @@ function setup(scene) {
 	ground.position.z = 5
 	ground.rotation.x = Math.PI*1.5
 	scene.add(ground)
+
+	var castle_texture = new THREE.TextureLoader().load("img/castle.png")
+	castle_texture.magFilter = THREE.NearestFilter
+	var castle_geometry = new THREE.PlaneGeometry(40, 40)
+	var castle_material = new THREE.MeshBasicMaterial({
+		map: castle_texture, side: THREE.DoubleSide, transparent: true,
+		color: 0x101010
+	})
+	var castle = new THREE.Mesh(castle_geometry, castle_material)
+	castle.position.z = -30
+	castle.position.y = 10
+	scene.add(castle)
 
 	var pitch = new THREE.TextureLoader().load("img/pitch.png")
 	pitch.magFilter = THREE.NearestFilter
