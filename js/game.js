@@ -169,8 +169,8 @@ function generate_gradient(start, stop, smooth) {
 	var context = canvas.getContext("2d")
 	context.rect(0, 0, size, size)
 	var gradient = context.createLinearGradient(0, 0, 0, size)
-	gradient.addColorStop(0, start)
-	gradient.addColorStop(1, stop)
+	gradient.addColorStop(0.2, start)
+	gradient.addColorStop(0.8, stop)
 	context.fillStyle = gradient
 	context.fill()
 
