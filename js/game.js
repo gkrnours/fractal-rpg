@@ -1,3 +1,5 @@
+Math.TAU = Math.PI*2
+
 document.addEventListener("DOMContentLoaded", start)
 function start() {
 	var ratio = window.innerWidth/window.innerHeight
@@ -6,7 +8,7 @@ function start() {
 	camera.position.z = 10
 	camera.position.x = 5
 	camera.position.y = 2
-	camera.lookAt({x:5,y:0,z:-20})
+	camera.lookAt({x:5,y:0,z:0})
 
 	var renderer = new THREE.WebGLRenderer()
 	renderer.setSize(window.innerWidth/1, window.innerHeight/1, false)
@@ -41,16 +43,8 @@ function setup(scene) {
 
 	var grass = new THREE.TextureLoader().load("img/grass.png")
 	grass.magFilter = THREE.NearestFilter
-	grass.wrapS = THREE.RepeatWrapping
-	grass.wrapT = THREE.RepeatWrapping
-	grass.repeat.set(5, 5)
-	var ground_geometry = new THREE.PlaneGeometry(10, 10)
-	var ground_material = new THREE.MeshBasicMaterial({map:grass})
-	var ground = new THREE.Mesh(ground_geometry, ground_material)
-	ground.position.x = 5
-	ground.position.z = 5
-	ground.rotation.x = Math.PI*1.5
-	scene.add(ground)
+	var grass_node = make_node(grass, 0x007700, [4, 4.5])
+	scene.add(grass_node)
 
 	var castle_texture = new THREE.TextureLoader().load("img/castle.png")
 	castle_texture.magFilter = THREE.NearestFilter
@@ -61,22 +55,14 @@ function setup(scene) {
 	})
 	var castle = new THREE.Mesh(castle_geometry, castle_material)
 	castle.position.z = -30
-	castle.position.y = 10
+	castle.position.y = -5
 	scene.add(castle)
 
 	var pitch = new THREE.TextureLoader().load("img/pitch.png")
 	pitch.magFilter = THREE.NearestFilter
-	var pitch_material = new THREE.SpriteMaterial({
-		map:pitch, color:0xffffff, fog:true})
-	var girl1 = new THREE.Sprite(pitch_material)
-	girl1.position.y = .5
-	girl1.position.x = 5
-	girl1.position.z = 5
-	scene.add(girl1)
-
 	var girl2_geometry = new THREE.PlaneGeometry(1, 1)
-	var girl2_material = new THREE.MeshBasicMaterial({map:pitch,
-		transparent:true})
+	var girl2_material = new THREE.MeshBasicMaterial({
+		map:pitch, transparent:true})
 	var girl2 = new THREE.Mesh(girl2_geometry, girl2_material)
 	girl2.position.y = 0.5
 	girl2.position.x = 4
@@ -107,4 +93,25 @@ function render(renderer, scene, camera, time) {
 	requestAnimationFrame(render.bind(this, renderer, scene, camera))
 	update()
 	renderer.render(scene, camera)
+}
+
+function make_node(texture, border, pos) {
+	texture.wrapS = THREE.RepeatWrapping
+	texture.wrapT = THREE.RepeatWrapping
+	texture.repeat.set(2, 2)
+	var node_geometry = new THREE.Geometry()
+	var node_material = new THREE.MeshFaceMaterial([
+		new THREE.MeshBasicMaterial({map: texture}),
+		new THREE.MeshBasicMaterial({color: border})
+	])
+	var node_matrix = THREE.Matrix4()
+	var main_geometry = new THREE.CircleGeometry(2, 12)
+	node_geometry.merge(main_geometry, node_matrix, 0)
+	var border_geometry = new THREE.RingGeometry(2, 2.5, 12, 2)
+	node_geometry.merge(border_geometry, node_matrix, 1)
+	var node = new THREE.Mesh(node_geometry, node_material)
+	node.position.x = pos[0]
+	node.position.z = pos[1]
+	node.rotation.x = Math.TAU * .75
+	return node
 }
