@@ -64,57 +64,30 @@ function setup(scene, camera) {
 
 	var grass = new THREE.TextureLoader().load("img/grass.png")
 	grass.magFilter = THREE.NearestFilter
-	var grass_node = make_node(grass, 0x007700, [5, 5])
+	var grass_node = make_node(grass, 0x007700, [0, 0])
 	scene.add(grass_node)
 
 	var pitch = new THREE.TextureLoader().load("img/pitch.png")
 	pitch.magFilter = THREE.NearestFilter
-	var girl2_geometry = new THREE.PlaneGeometry(1, 1)
-	var girl2_material = new THREE.MeshBasicMaterial({
-		map:pitch, transparent:true})
-	var girl2 = new THREE.Mesh(girl2_geometry, girl2_material)
-	girl2.position.y = 0.5
-	girl2.position.x = 5
-	girl2.position.z = 5
-	scene.add(girl2)
+	var girl = make_standin(pitch)
+	girl.position.x = 5
+	girl.position.z = 5
+	scene.add(girl)
 
 	var box_img = new THREE.TextureLoader().load("img/box.png")
 	box_img.magFilter = THREE.NearestFilter
-	var box_geometry = new THREE.PlaneGeometry(1, 1)
-	var box_material = new THREE.MeshBasicMaterial({map:box_img,
-		color:0xffffff, transparent:true})
-	var box = new THREE.Mesh(box_geometry, box_material)
-	box.position.y = 0.5 - 1/8
+	var box = make_standin(box_img)
+	box.position.y -= 1/8
 	box.position.x = 4
 	box.position.z = 5
-	box.rotation.x = Math.TAU*0.0
 	scene.add(box)
 
 	var sea = new THREE.TextureLoader().load("img/sea.png")
 	sea.magFilter = THREE.NearestFilter
-	var sea_node = make_node(sea, 0x000077, [15, 0])
+	var sea_node = make_node(sea, 0x000077, [10, 10])
 	scene.add(sea_node)
 
-	var path_texture = new THREE.Texture(generate_gradient(
-		"#007700", "#000077"
-	))
-	path_texture.needsUpdate = true
-	var path_geometry = new THREE.PlaneGeometry(1, 10)
-	var path_material = new THREE.MeshBasicMaterial({
-		color: 0xffffff, map: path_texture
-	})
-	var path = new THREE.Mesh(path_geometry, path_material)
-	path.position.x = 10
-	path.position.z = 2.5
-	path.position.y = -0.01
-	path.rotation.x = Math.TAU * .75
-	path.rotation.z = Math.TAU * .32
-	scene.add(path)
-
-	var line_geometry = new THREE.Geometry()
-	geometry.vertices.push({x:0, y:0, z:0}, {x:10, y:0, z:10})
-	var line = new THREE.Line(line_geometry)
-	console.log("line", line.position, line.rotation)
+	scene.add(make_path(grass_node, sea_node))
 
 	t0 = performance.now()
 	offset = 0
@@ -157,6 +130,32 @@ function make_node(texture, border, pos) {
 	return node
 }
 
+function make_path(start, stop) {
+	start_color = "#"+start.material.materials[1].color.getHexString()
+	stop_color  = "#"+ stop.material.materials[1].color.getHexString()
+	d_x = stop.position.x - start.position.x
+	d_z = start.position.z - stop.position.z
+	var path_texture = generate_gradient(start_color, stop_color)
+	var path_geometry = new THREE.PlaneGeometry(1, Math.hypot(d_x, d_z))
+	var path_material = new THREE.MeshBasicMaterial({map: path_texture})
+	var path = new THREE.Mesh(path_geometry, path_material)
+	path.position.x = (stop.position.x + start.position.x) * .5
+	path.position.z = (stop.position.z + start.position.z) * .5
+	path.position.y = -0.01
+	path.rotation.x = Math.TAU * .75
+	path.rotation.z = Math.atan2(d_z, d_x) + (Math.TAU * .25)
+	return path
+}
+
+function make_standin(texture) {
+	var standin_geometry = new THREE.PlaneGeometry(1, 1)
+	var standin_material = new THREE.MeshBasicMaterial({
+		map:texture, transparent:true})
+	var standin = new THREE.Mesh(standin_geometry, standin_material)
+	standin.position.y = 0.5
+	return standin
+}
+
 function generate_gradient(start, stop, smooth) {
 	smooth = smooth || 4
 	if (smooth < 2 || 10 < smooth) {
@@ -174,5 +173,7 @@ function generate_gradient(start, stop, smooth) {
 	context.fillStyle = gradient
 	context.fill()
 
-	return canvas
+	var texture = new THREE.Texture(canvas)
+	texture.needsUpdate = true
+	return texture
 }
