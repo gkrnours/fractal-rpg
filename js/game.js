@@ -85,14 +85,23 @@ function setup(scene, camera) {
 	box.position.y -= 2/16
 	sea_node.add(box)
 
-	scene.add(make_path(grass_node, sea_node))
+	var path = make_path(grass_node, sea_node)
+	scene.add(path)
 
 	t0 = performance.now()
+	i = 0
 	offset = 0
 	function update() {
 		cube.rotation.x += 0.1
 		cube.rotation.y += 0.01
 		if (500 < (performance.now() - t0)) {
+			i++
+			if (i % 5 == 0) {
+				select_path(path)
+			}
+			if (i % 5 == 3) {
+				unselect_path(path)
+			}
 			t0 = performance.now()
 			offset = (offset+1) % 4
 			sea.offset.x = offset/4
@@ -121,6 +130,7 @@ function make_node(texture, border, pos) {
 	node_geometry.merge(main_geometry, node_matrix, 0)
 	var border_geometry = new THREE.RingGeometry(2, 2.5, 12, 2)
 	node_geometry.merge(border_geometry, node_matrix, 1)
+	node_geometry.mergeVertices()
 	node_geometry.rotateX(Math.TAU * .75)
 	var node = new THREE.Mesh(node_geometry, node_material)
 	node.position.x = pos[0]
@@ -134,7 +144,7 @@ function make_path(start, stop) {
 	d_x = stop.position.x - start.position.x
 	d_z = start.position.z - stop.position.z
 	var path_texture = generate_gradient(start_color, stop_color)
-	var path_geometry = new THREE.PlaneGeometry(1, Math.hypot(d_x, d_z))
+	var path_geometry = new THREE.PlaneGeometry(1.2, Math.hypot(d_x, d_z))
 	path_geometry.rotateX(Math.TAU * .75)
 	path_geometry.rotateY(Math.atan2(d_z, d_x) + (Math.TAU * .25))
 	var path_material = new THREE.MeshBasicMaterial({map: path_texture})
@@ -142,6 +152,17 @@ function make_path(start, stop) {
 	path.position.x = (stop.position.x + start.position.x) * .5
 	path.position.z = (stop.position.z + start.position.z) * .5
 	path.position.y = -0.01
+
+	var select_geometry = new THREE.PlaneGeometry(2, Math.hypot(d_x, d_z) + 1)
+	select_geometry.rotateX(Math.TAU * .75)
+	select_geometry.rotateY(Math.atan2(d_z, d_x) + (Math.TAU * .25))
+	var select_material = new THREE.MeshBasicMaterial({
+		color: 0x888888, map: path_texture})
+	var select = new THREE.Mesh(select_geometry, select_material)
+	select.name = "select"
+	select.position.y = -0.01
+	select.visible = false
+	path.add(select)
 	return path
 }
 
@@ -174,4 +195,11 @@ function generate_gradient(start, stop, smooth) {
 	var texture = new THREE.Texture(canvas)
 	texture.needsUpdate = true
 	return texture
+}
+
+function select_path(path) {
+	path.getObjectByName("select").visible = true
+}
+function unselect_path(path) {
+	path.getObjectByName("select").visible = false
 }
