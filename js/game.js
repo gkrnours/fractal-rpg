@@ -74,18 +74,16 @@ function setup(scene, camera) {
 	girl.position.z = 5
 	scene.add(girl)
 
+	var sea = new THREE.TextureLoader().load("img/sea.png")
+	sea.magFilter = THREE.NearestFilter
+	var sea_node = make_node(sea, 0x000077, [10, 0])
+	scene.add(sea_node)
+
 	var box_img = new THREE.TextureLoader().load("img/box.png")
 	box_img.magFilter = THREE.NearestFilter
 	var box = make_standin(box_img)
-	box.position.y -= 1/8
-	box.position.x = 4
-	box.position.z = 5
-	scene.add(box)
-
-	var sea = new THREE.TextureLoader().load("img/sea.png")
-	sea.magFilter = THREE.NearestFilter
-	var sea_node = make_node(sea, 0x000077, [10, 10])
-	scene.add(sea_node)
+	box.position.y -= 2/16
+	sea_node.add(box)
 
 	scene.add(make_path(grass_node, sea_node))
 
@@ -123,10 +121,10 @@ function make_node(texture, border, pos) {
 	node_geometry.merge(main_geometry, node_matrix, 0)
 	var border_geometry = new THREE.RingGeometry(2, 2.5, 12, 2)
 	node_geometry.merge(border_geometry, node_matrix, 1)
+	node_geometry.rotateX(Math.TAU * .75)
 	var node = new THREE.Mesh(node_geometry, node_material)
 	node.position.x = pos[0]
 	node.position.z = pos[1]
-	node.rotation.x = Math.TAU * .75
 	return node
 }
 
@@ -137,13 +135,13 @@ function make_path(start, stop) {
 	d_z = start.position.z - stop.position.z
 	var path_texture = generate_gradient(start_color, stop_color)
 	var path_geometry = new THREE.PlaneGeometry(1, Math.hypot(d_x, d_z))
+	path_geometry.rotateX(Math.TAU * .75)
+	path_geometry.rotateY(Math.atan2(d_z, d_x) + (Math.TAU * .25))
 	var path_material = new THREE.MeshBasicMaterial({map: path_texture})
 	var path = new THREE.Mesh(path_geometry, path_material)
 	path.position.x = (stop.position.x + start.position.x) * .5
 	path.position.z = (stop.position.z + start.position.z) * .5
 	path.position.y = -0.01
-	path.rotation.x = Math.TAU * .75
-	path.rotation.z = Math.atan2(d_z, d_x) + (Math.TAU * .25)
 	return path
 }
 
