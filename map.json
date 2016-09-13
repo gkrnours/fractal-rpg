@@ -1,0 +1,60 @@
+{
+	"atlas": {
+		"grass": {
+			"texture": "img/grass.png",
+			"color": "0x007700"
+		},
+		"sea": {
+			"texture": "img/sea.png",
+			"color": "0x000077"
+		}
+	},
+	"map": [
+		{
+			"id": "start",
+			"type": "grass",
+			"position": [0, 0],
+			"link": ["plain", "beach"]
+		},
+		{
+			"id": "plain",
+			"type": "grass",
+			"position": [10, 0],
+			"link": ["beach", "sea", "town", "city"]
+		},
+		{
+			"id": "town",
+			"type": "grass",
+			"position": [20, 0],
+			"link": ["city"]
+		},
+		{
+			"id": "city",
+			"type": "grass",
+			"position": [20, 10],
+			"link": ["castle"]
+		},
+		{
+			"id": "castle",
+			"type": "grass",
+			"position": [30, 10]
+		},
+		{
+			"id": "beach",
+			"type": "sea",
+			"position": [10, -10],
+			"link": ["sea"]
+		},
+		{
+			"id": "sea",
+			"type": "sea",
+			"position": [20, -10],
+			"link": ["high"]
+		},
+		{
+			"id": "high",
+			"type": "sea",
+			"position": [30, -10]
+		}
+	]
+}

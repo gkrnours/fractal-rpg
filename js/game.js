@@ -5,10 +5,10 @@ function start() {
 	var ratio = window.innerWidth/window.innerHeight
 	var scene = new THREE.Scene()
 	var camera = new THREE.PerspectiveCamera(60, ratio, 0.1, 1000)
-	camera.position.z = 15
-	camera.position.x = 10
+	camera.position.z = 20
+	camera.position.x = 15
 	camera.position.y = 5
-	camera.lookAt({x:10,y:0,z:0})
+	camera.lookAt({x:15,y:0,z:0})
 
 	var renderer = new THREE.WebGLRenderer()
 	renderer.setSize(window.innerWidth/1, window.innerHeight/1, false)
@@ -41,8 +41,8 @@ function setup(scene, camera) {
 		 envMap: skybox_texture, side: THREE.BackSide
 	})
 	var skybox = new THREE.Mesh(skybox_geometry, skybox_material)
-	skybox.position.z = 15
-	skybox.position.x = 10
+	skybox.position.z = 20
+	skybox.position.x = 15
 	skybox.position.y = 5
 	scene.add(skybox)
 
@@ -54,7 +54,7 @@ function setup(scene, camera) {
 		color: 0x101010
 	})
 	var castle = new THREE.Mesh(castle_geometry, castle_material)
-	castle.position.z = -30
+	castle.position.z = -25
 	castle.position.y = -5
 	scene.add(castle)
 
@@ -62,11 +62,38 @@ function setup(scene, camera) {
 	 * node *
 	 ********/
 
-	var grass = new THREE.TextureLoader().load("img/grass.png")
-	grass.magFilter = THREE.NearestFilter
-	var grass_node = make_node(grass, 0x007700, [0, 0])
-	scene.add(grass_node)
+	var oReq = new XMLHttpRequest()
+	oReq.addEventListener("load", function() {
+		var data = JSON.parse(oReq.responseText)
+		var atlas = data.atlas
+		var nodes = {}
+		for (type in atlas) {
+			var texture = new THREE.TextureLoader().load(atlas[type].texture)
+			texture.magFilter = THREE.NearestFilter
+			nodes[type] = make_node(texture, parseInt(atlas[type].color))
+		}
 
+		var map = {}
+		var path = {}
+		for (i=0; i<data.map.length; ++i) {
+			var loc = data.map[i]
+			var node = nodes[loc.type].clone()
+			node.position.x = loc.position[0]
+			node.position.z = loc.position[1]
+			scene.add(node)
+			map[loc.id] = node
+			path[loc.id] = loc.link
+		}
+		for (p in path) {
+			for (i=0; path[p] && i<path[p].length; ++i) {
+				scene.add( make_path(map[p], map[path[p][i]]) )
+			}
+		}
+	})
+	oReq.open("GET", "map.json")
+	oReq.send()
+
+/*
 	var pitch = new THREE.TextureLoader().load("img/pitch.png")
 	pitch.magFilter = THREE.NearestFilter
 	var girl = make_standin(pitch)
@@ -74,19 +101,12 @@ function setup(scene, camera) {
 	girl.position.z = 5
 	scene.add(girl)
 
-	var sea = new THREE.TextureLoader().load("img/sea.png")
-	sea.magFilter = THREE.NearestFilter
-	var sea_node = make_node(sea, 0x000077, [10, 0])
-	scene.add(sea_node)
-
 	var box_img = new THREE.TextureLoader().load("img/box.png")
 	box_img.magFilter = THREE.NearestFilter
 	var box = make_standin(box_img)
 	box.position.y -= 2/16
 	sea_node.add(box)
-
-	var path = make_path(grass_node, sea_node)
-	scene.add(path)
+*/
 
 	t0 = performance.now()
 	i = 0
@@ -97,14 +117,14 @@ function setup(scene, camera) {
 		if (500 < (performance.now() - t0)) {
 			i++
 			if (i % 5 == 0) {
-				select_path(path)
+		//		select_path(path)
 			}
 			if (i % 5 == 3) {
-				unselect_path(path)
+		//		unselect_path(path)
 			}
 			t0 = performance.now()
 			offset = (offset+1) % 4
-			sea.offset.x = offset/4
+		//	sea.offset.x = offset/4
 		}
 	}
 	return update
@@ -133,8 +153,10 @@ function make_node(texture, border, pos) {
 	node_geometry.mergeVertices()
 	node_geometry.rotateX(Math.TAU * .75)
 	var node = new THREE.Mesh(node_geometry, node_material)
-	node.position.x = pos[0]
-	node.position.z = pos[1]
+	if (pos) {
+		node.position.x = pos[0]
+		node.position.z = pos[1]
+	}
 	return node
 }
 
