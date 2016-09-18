@@ -1,5 +1,8 @@
 Math.TAU = Math.PI*2
 
+var mouse = new THREE.Vector2()
+var raycaster = new THREE.Raycaster()
+
 document.addEventListener("DOMContentLoaded", start)
 function start() {
 	var ratio = window.innerWidth/window.innerHeight
@@ -16,6 +19,11 @@ function start() {
 
 	update = setup(scene, camera)
 	render(renderer, scene, camera)
+
+	document.addEventListener('mousemove', function(evt) {
+		mouse.x = (evt.clientX / window.innerWidth) * 2 - 1
+		mouse.y = - (evt.clientY / window.innerHeight) * 2 + 1
+	}, false)
 }
 
 function setup(scene, camera) {
@@ -110,22 +118,47 @@ function setup(scene, camera) {
 
 	t0 = performance.now()
 	i = 0
+	j = 0
 	offset = 0
+	var focus = []
 	function update() {
+		if (performance.now() - t0 < 100) {
+			return
+		}
+		t0 = performance.now()
+		++j
+		raycaster.setFromCamera(mouse, camera)
+		var intersects = raycaster.intersectObjects(scene.children)
+		var new_focus = []
+		for (i=0; i < intersects.length; ++i) {
+			obj = intersects[i].object
+			if (obj.name == "node" || obj.name == "path") {
+				new_focus.push(obj)
+			}
+		}
+		for (i=0; i < focus.length; ++i) {
+			if (!(focus[i] in new_focus)) {
+				// console.log("do unfocus", focus[i] in new_focus)
+				unselect(focus[i])
+			}
+		}
+		for (i=0; i < new_focus.length; ++i) {
+			if (!(new_focus[i] in focus)) {
+				select(new_focus[i])
+			}
+		}
+		focus = new_focus
+
 		cube.rotation.x += 0.1
 		cube.rotation.y += 0.01
+		/*
 		if (500 < (performance.now() - t0)) {
 			i++
-			if (i % 5 == 0) {
-		//		select_path(path)
-			}
-			if (i % 5 == 3) {
-		//		unselect_path(path)
-			}
 			t0 = performance.now()
 			offset = (offset+1) % 4
 		//	sea.offset.x = offset/4
 		}
+		*/
 	}
 	return update
 }
@@ -145,7 +178,7 @@ function make_node(texture, border, pos) {
 		new THREE.MeshBasicMaterial({map: texture}),
 		new THREE.MeshBasicMaterial({color: border})
 	])
-	var node_matrix = THREE.Matrix4()
+	var node_matrix = new THREE.Matrix4()
 	var main_geometry = new THREE.CircleGeometry(2, 12)
 	node_geometry.merge(main_geometry, node_matrix, 0)
 	var border_geometry = new THREE.RingGeometry(2, 2.5, 12, 2)
@@ -153,6 +186,7 @@ function make_node(texture, border, pos) {
 	node_geometry.mergeVertices()
 	node_geometry.rotateX(Math.TAU * .75)
 	var node = new THREE.Mesh(node_geometry, node_material)
+	node.name = "node"
 	if (pos) {
 		node.position.x = pos[0]
 		node.position.z = pos[1]
@@ -166,25 +200,16 @@ function make_path(start, stop) {
 	d_x = stop.position.x - start.position.x
 	d_z = start.position.z - stop.position.z
 	var path_texture = generate_gradient(start_color, stop_color)
-	var path_geometry = new THREE.PlaneGeometry(1.2, Math.hypot(d_x, d_z))
+	var path_geometry = new THREE.PlaneGeometry(1.2, Math.hypot(d_x,d_z) - 4.4)
 	path_geometry.rotateX(Math.TAU * .75)
 	path_geometry.rotateY(Math.atan2(d_z, d_x) + (Math.TAU * .25))
+	path_geometry.rotation_y = Math.atan2(d_z, d_x) + (Math.TAU * .25)
 	var path_material = new THREE.MeshBasicMaterial({map: path_texture})
 	var path = new THREE.Mesh(path_geometry, path_material)
 	path.position.x = (stop.position.x + start.position.x) * .5
 	path.position.z = (stop.position.z + start.position.z) * .5
 	path.position.y = -0.01
-
-	var select_geometry = new THREE.PlaneGeometry(2, Math.hypot(d_x, d_z) + 1)
-	select_geometry.rotateX(Math.TAU * .75)
-	select_geometry.rotateY(Math.atan2(d_z, d_x) + (Math.TAU * .25))
-	var select_material = new THREE.MeshBasicMaterial({
-		color: 0x888888, map: path_texture})
-	var select = new THREE.Mesh(select_geometry, select_material)
-	select.name = "select"
-	select.position.y = -0.01
-	select.visible = false
-	path.add(select)
+	path.name = "path"
 	return path
 }
 
@@ -219,9 +244,41 @@ function generate_gradient(start, stop, smooth) {
 	return texture
 }
 
-function select_path(path) {
-	path.getObjectByName("select").visible = true
+var k = 0
+function highlight(item, color) {
+	var hili_material = new THREE.MeshBasicMaterial({color: color})
+	if (item.name == "path") {
+		param = item.geometry.parameters
+		var hili_geometry = new THREE.PlaneGeometry(2, param.height)
+		hili_geometry.rotateX(Math.TAU * .75)
+		hili_geometry.rotateY(item.geometry.rotation_y)
+	}
+	else if (item.name == "node") {
+		var hili_geometry = new THREE.CircleGeometry(2.9, 12)
+		hili_geometry.rotateX(Math.TAU * .75)
+	}
+	/*
+		var item_texture = item.material.materials[0].map
+		var item_color = item.material.materials[1].color
+		console.log(item_texture, item_color)
+		var hili_material = new THREE.MeshBasicMaterial({
+			color: item_color, map: item_texture})
+	*/
+	var hilight = new THREE.Mesh(hili_geometry, hili_material)
+	hilight.name = "hilight"
+	hilight.position.y = -0.02
+	item.add(hilight)
 }
-function unselect_path(path) {
-	path.getObjectByName("select").visible = false
+
+function unhighlight(obj) {
+	obj.remove(obj.getObjectByName("hilight"))
+}
+
+function select(obj) {
+	//console.log("select", obj)
+	highlight(obj, 0x888888)
+}
+function unselect(obj) {
+	//console.log("unselect", obj)
+	unhighlight(obj)
 }
